@@ -3,10 +3,12 @@ import InputField from './InputField';
 import { db, storage } from '../../firebaseConfig';
 import { updateDoc, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
-import { toast,ToastContainer } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Form, Button, Container } from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const formReducer = (state, action) => {
   switch (action.type) {
@@ -58,19 +60,17 @@ const AuthForm = ({ onSubmit, buttonText, fieldConfigs }) => {
     event.preventDefault();
 
     try {
-      // Create user in Firebase Authentication
       const authUser = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
 
-      toast.success(`User successfully signed up:', ${authUser.user.email}`);
+      toast.success(`User successfully signed up: ${authUser.user.email}`);
       console.log('User ID:', authUser.user.uid);
 
       const userDocRef = doc(db, 'users', authUser.user.uid);
 
-      // Store additional user data in Firestore
       await setDoc(userDocRef, {
         ...formData,
         userId: authUser.user.uid,
@@ -86,9 +86,13 @@ const AuthForm = ({ onSubmit, buttonText, fieldConfigs }) => {
       }
 
       console.log('User data stored in Firestore.');
-      onSubmit(); // Notify parent component of form submission if needed
+      onSubmit();
     } catch (error) {
-      console.error('Error signing up or storing data:', error.message);
+      if (error.code === 'auth/email-already-in-use') {
+        toast.error('Email already exists. Please sign in instead.');
+      } else {
+        console.error('Error signing up or storing data:', error.message);
+      }
     }
   };
 
@@ -104,25 +108,34 @@ const AuthForm = ({ onSubmit, buttonText, fieldConfigs }) => {
   ));
 
   return (
-    <>
-    <ToastContainer/>
-    <form onSubmit={handleSubmit}>
-      {inputFields}
-      <div>
-        <label htmlFor="picture">Upload Picture:</label>
-        <input
-          type="file"
-          id="picture"
-          accept="image/*"
-          onChange={handlePictureUpload}
-        />
+    <Container className="d-flex justify-content-center align-items-center vh-100">
+      <div className="auth-box">
+        <ToastContainer />
+        <Form onSubmit={handleSubmit}>
+          {inputFields}
+          <Form.Group controlId="picture">
+            <Form.Label>Upload Picture:</Form.Label>
+            <Form.Control
+              type="file"
+              accept="image/*"
+              onChange={handlePictureUpload}
+            />
+            {uploadedPicture && (
+              <p>Uploaded Picture: {uploadedPicture.name}</p>
+            )}
+            <Button type="submit" disabled={!formIsValid}>
+              {buttonText}
+            </Button>
+          </Form.Group>
+        </Form>
+        <p>
+          Already have an account?{' '}
+          <Button variant="link">
+            Sign In
+          </Button>
+        </p>
       </div>
-      {uploadedPicture && <p>Uploaded Picture: {uploadedPicture.name}</p>}
-      <button type="submit" disabled={!formIsValid}>
-        {buttonText}
-      </button>
-    </form>
-    </>
+    </Container>
   );
 };
 
