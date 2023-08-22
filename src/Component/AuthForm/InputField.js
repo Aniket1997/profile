@@ -1,17 +1,19 @@
 import React from 'react';
-import { Form } from 'react-bootstrap';
+import { FormControl, InputLabel, Input, FormHelperText } from '@mui/material';
 
 const InputField = ({ label, name, value, type, onChange }) => (
-  <Form.Group controlId={name}>
-    <Form.Label>{label}:</Form.Label>
-    <Form.Control
+  <FormControl>
+    <InputLabel htmlFor={name}>{label}:</InputLabel>
+    <Input
       type={type}
+      id={name}
       name={name}
       value={value}
       onChange={onChange}
       autoComplete='off'
     />
-  </Form.Group>
+    <FormHelperText>Helper text goes here</FormHelperText>
+  </FormControl>
 );
 
 export default InputField;
